@@ -1,0 +1,26 @@
+[33m[nodemon] 3.1.10[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): server.ts src[39m
+[33m[nodemon] watching extensions: ts,tsx,js,jsx[39m
+[32m[nodemon] starting `npx tsx server.ts`[39m
+
+node:internal/modules/run_main:104
+    triggerUncaughtException(
+    ^
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/home/kay/Downloads/TobeMid/test-portal/server.ts' imported from /home/kay/Downloads/TobeMid/test-portal/
+    at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+    at moduleResolve (node:internal/modules/esm/resolve:860:10)
+    at defaultResolve (node:internal/modules/esm/resolve:984:11)
+    at nextResolve (node:internal/modules/esm/hooks:748:28)
+    at resolveBase (file:///home/kay/Downloads/TobeMid/test-portal/node_modules/tsx/dist/esm/index.mjs?1759305541537:2:3744)
+    at async resolveDirectory (file:///home/kay/Downloads/TobeMid/test-portal/node_modules/tsx/dist/esm/index.mjs?1759305541537:2:4237)
+    at async resolve (file:///home/kay/Downloads/TobeMid/test-portal/node_modules/tsx/dist/esm/index.mjs?1759305541537:2:5355)
+    at async nextResolve (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.resolve (node:internal/modules/esm/hooks:240:24)
+    at async handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///home/kay/Downloads/TobeMid/test-portal/server.ts'
+}
+
+Node.js v23.11.0
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m

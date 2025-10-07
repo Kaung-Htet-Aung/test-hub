@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid()) // Changed
+  name          String
+  email         String         @unique
+  phone         String
+  note          String
+  role          UserRole       @default(PARTICIPANT)
+  status        UserStatus     @default(PENDING)
+  createdAt     DateTime       @default(now())
+  lastActivity  DateTime?
+
+  // Relations
+  createdTests  Test[]             @relation("CreatedTests")
+  assignments   TestAssignment[]
+  attempts      TestAttempt[]
+  groupMembers  GroupParticipant[]
+}
+
+enum UserRole {
+  ADMIN
+  PARTICIPANT
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+}
+
+model Test {
+  id            String        @id @default(cuid()) // Changed
+  title         String
+  description   String?
+  createdById   String // Changed
+  createdAt     DateTime      @default(now())
+
+  // Relations
+  createdBy     User          @relation("CreatedTests", fields: [createdById], references: [id])
+  assignments   TestAssignment[]
+  attempts      TestAttempt[]
+  groupTests    GroupTest[]
+}
+
+model TestAssignment {
+  id          String   @id @default(cuid()) // Changed
+  userId      String // Changed
+  testId      String // Changed
+  assignedAt  DateTime @default(now())
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id])
+  test        Test     @relation(fields: [testId], references: [id])
+
+  @@unique([userId, testId])
+}
+
+model TestAttempt {
+  id           String    @id @default(cuid()) // Changed
+  userId       String // Changed
+  testId       String // Changed
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  score        Float?
+
+  // Relations
+  user         User      @relation(fields: [userId], references: [id])
+  test         Test      @relation(fields: [testId], references: [id])
+
+  @@unique([userId, testId])
+}
+
+model Group {
+  id        String    @id @default(cuid()) // Changed
+  name      String
+  createdAt DateTime  @default(now())
+
+  // Relations
+  participants GroupParticipant[]
+  tests        GroupTest[]
+}
+
+model GroupParticipant {
+  id        String   @id @default(cuid()) // Changed
+  groupId   String // Changed
+  userId    String // Changed
+  joinedAt  DateTime @default(now())
+
+  group     Group @relation(fields: [groupId], references: [id])
+  user      User  @relation(fields: [userId], references: [id])
+
+  @@unique([groupId, userId])
+}
+
+model GroupTest {
+  id      String @id @default(cuid()) // Changed
+  groupId String // Changed
+  testId  String // Changed
+
+  group   Group @relation(fields: [groupId], references: [id])
+  test    Test  @relation(fields: [testId], references: [id])
+
+  @@unique([groupId, testId])
+}
