@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useActionState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { PageLayout } from "@/components/layout/page-layout";
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createParticipant } from "@/form-actions/add-participate/action";
+import api from "@/lib/api";
 import {
   Select,
   SelectContent,
@@ -38,18 +38,28 @@ import {
 import { toast } from "sonner";
 import { QueryClient, useQuery } from "@tanstack/react-query";
 import { getGroups } from "@/lib/getGroups";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import z from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
-interface CSVParticipant {
+interface ParticipantFormData {
   name: string;
   email: string;
   phone: string;
-  status?: string;
-  groups?: string;
-  notes?: string;
+  note?: string;
+  groupId: string;
 }
 
 interface ParsedParticipant {
-  data: CSVParticipant;
+  data: ParticipantFormData;
   errors: string[];
   isValid: boolean;
 }
@@ -58,9 +68,29 @@ interface GroupData {
   id: string;
   name: string;
 }
+const participantSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters"),
+  email: z.email("Please enter a valid email address"),
+  phone: z
+    .string()
+    .trim()
+    .nonempty("Phone number is required")
+    .regex(/^[\d\s\-+()]+$/, "Please enter a valid phone number"),
+  note: z.string().optional(),
+  groupId: z.string().trim().nonempty(),
+});
 export default function AddParticipantPage() {
   const router = useRouter();
-
+  const form = useForm<ParticipantFormData>({
+    resolver: zodResolver(participantSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      note: "",
+      groupId: "",
+    },
+  });
   type State = {
     success: boolean;
     message: string;
@@ -83,30 +113,6 @@ export default function AddParticipantPage() {
   const [parsedData, setParsedData] = useState<ParsedParticipant[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [state, formAction] = useActionState(createParticipant, initialState);
-  const queryClient = new QueryClient();
-  useEffect(() => {
-    if (state.message) {
-      if (state.success) {
-        queryClient.invalidateQueries({
-          queryKey: ["participants"],
-        });
-
-        toast.success(state.message);
-      } else {
-        if (state.errors && Object.keys(state.errors).length > 0) {
-          toast.error(state.message, {
-            description: Object.entries(state.errors)
-              .map(([field, msgs]) => `${msgs.join(", ")}`)
-              .join("\n"),
-          });
-        } else {
-          toast.error(state.message);
-        }
-      }
-    }
-  }, [state]);
-
   const { isPending, isError, data, error } = useQuery({
     queryKey: ["groups"],
     queryFn: getGroups,
@@ -179,13 +185,12 @@ export default function AddParticipantPage() {
       const values = lines[i]
         .split(",")
         .map((v) => v.trim().replace(/^"|"$/g, ""));
-      const participant: CSVParticipant = {
+      const participant: ParticipantFormData = {
         name: values[headers.indexOf("name")] || "",
         email: values[headers.indexOf("email")] || "",
         phone: values[headers.indexOf("phone")] || "",
-        status: values[headers.indexOf("status")] || "pending",
-        groups: values[headers.indexOf("groups")] || "",
-        notes: values[headers.indexOf("notes")] || "",
+        note: values[headers.indexOf("notes")] || "",
+        groupId: values[headers.indexOf("notes")] || "",
       };
 
       const errors: string[] = [];
@@ -292,7 +297,14 @@ export default function AddParticipantPage() {
     setParsedData([]);
     setShowPreview(false);
   };
-
+  async function onSubmit(formdata: z.infer<typeof participantSchema>) {
+    try {
+      const response = await api.post("/admin/participants/", formdata);
+      toast.success(response.data.message);
+    } catch (e: any) {
+      toast.error(e.response.data.message);
+    }
+  }
   return (
     <PageLayout
       title="Add Participant"
@@ -329,161 +341,188 @@ export default function AddParticipantPage() {
 
           {/* Individual Add Form */}
           <TabsContent value="individual" className="space-y-6">
-            <form action={formAction} className="space-y-6">
-              {/* Personal Information */}
-              <Card className="bg-gray-900 border-gray-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-gray-100">
-                    <User className="h-5 w-5 text-gray-400" />
-                    Personal Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name" className="text-gray-300">
-                        Full Name *
-                      </Label>
-                      <Input
-                        id="name"
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
+                {/* Personal Information */}
+                <Card className="bg-gray-900 border-gray-800">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-gray-100">
+                      <User className="h-5 w-5 text-gray-400" />
+                      Personal Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
                         name="name"
-                        type="text"
-                        placeholder="Enter full name"
-                        className={`bg-gray-800 border-gray-700 text-gray-100 ${
-                          state.errors?.name ? "border-red-500" : ""
-                        }`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-gray-300">
+                              Full Name *
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="Enter full name"
+                                className="bg-gray-800 border-gray-700 text-gray-100"
+                              />
+                            </FormControl>
+                            <FormMessage className="text-red-400" />
+                          </FormItem>
+                        )}
                       />
-                      {state.errors?.name && (
-                        <p className="text-sm text-red-400">
-                          {state.errors?.name[0]}
-                        </p>
-                      )}
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-gray-300">
-                        Email Address *
-                      </Label>
-                      <Input
-                        id="email"
-                        type="email"
+                      <FormField
+                        control={form.control}
                         name="email"
-                        placeholder="Enter email address"
-                        className={`bg-gray-800 border-gray-700 text-gray-100 ${
-                          state.errors?.email ? "border-red-500" : ""
-                        }`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-gray-300">
+                              Email Address *
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="email"
+                                placeholder="Enter email address"
+                                className="bg-gray-800 border-gray-700 text-gray-100"
+                              />
+                            </FormControl>
+                            <FormMessage className="text-red-400" />
+                          </FormItem>
+                        )}
                       />
-                      {state.errors?.email && (
-                        <p className="text-sm text-red-400">
-                          {state.errors.email[0]}
-                        </p>
-                      )}
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="phone" className="text-gray-300">
-                        Phone Number *
-                      </Label>
-                      <Input
-                        id="phone"
-                        type="tel"
+                      <FormField
+                        control={form.control}
                         name="phone"
-                        placeholder="Enter phone number"
-                        className={`bg-gray-800 border-gray-700 text-gray-100 ${
-                          state.errors?.phone ? "border-red-500" : ""
-                        }`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-gray-300">
+                              Phone Number *
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="tel"
+                                placeholder="Enter phone number"
+                                className="bg-gray-800 border-gray-700 text-gray-100"
+                              />
+                            </FormControl>
+                            <FormMessage className="text-red-400" />
+                          </FormItem>
+                        )}
                       />
-                      {state.errors?.phone && (
-                        <p className="text-sm text-red-400">
-                          {state.errors?.phone[0]}
-                        </p>
-                      )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              {/* Group Assignment */}
-              <Card className="bg-gray-900 border-gray-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-gray-100">
-                    <Users className="h-5 w-5 text-gray-400" />
-                    Group Assignment
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Add to Groups</Label>
-                    <Select name="group">
-                      <SelectTrigger className="bg-gray-800 border-gray-700 text-gray-100">
-                        <SelectValue placeholder="Select a group to add" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-900 text-white border-gray-800">
-                        <SelectGroup>
-                          <SelectLabel>Groups</SelectLabel>
-                          {data.map((gp: GroupData) => (
-                            <SelectItem key={gp.id} value={gp.id}>
-                              {gp.name}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
+                {/* Group Assignment */}
+                <Card className="bg-gray-900 border-gray-800">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-gray-100">
+                      <Users className="h-5 w-5 text-gray-400" />
+                      Group Assignment
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <FormField
+                        control={form.control}
+                        name="groupId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-gray-300">
+                              Add to Groups
+                            </FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="bg-gray-800 border-gray-700 text-gray-100">
+                                  <SelectValue placeholder="Select a group to add" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="bg-gray-900 border-gray-800">
+                                {data.map((group: GroupData) => (
+                                  <SelectItem key={group.id} value={group.id}>
+                                    {group.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage className="text-red-400" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
 
-              <Card className="bg-gray-900 border-gray-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-gray-100">
-                    <Calendar className="h-5 w-5 text-gray-400" />
-                    Additional Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="notes" className="text-gray-300">
-                      Notes
-                    </Label>
-                    <Textarea
-                      id="notes"
+                {/* Additional Notes */}
+                <Card className="bg-gray-900 border-gray-800">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-gray-100">
+                      <Calendar className="h-5 w-5 text-gray-400" />
+                      Additional Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
                       name="note"
-                      placeholder="Add any additional notes about this participant..."
-                      className="bg-gray-800 border-gray-700 text-gray-100 min-h-[100px] resize-none"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-300">Notes</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              placeholder="Add any additional notes about this participant..."
+                              className="bg-gray-800 border-gray-700 text-gray-100 min-h-[100px] resize-none"
+                            />
+                          </FormControl>
+                          <FormMessage className="text-red-400" />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              {/* Submit Button */}
-              <div className="flex justify-end gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.back()}
-                  className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Adding...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Add Participant
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
+                {/* Submit Button */}
+                <div className="flex justify-end gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.back()}
+                    className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Add Participant
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </TabsContent>
 
           {/* Bulk Upload */}
@@ -697,9 +736,9 @@ export default function AddParticipantPage() {
                               <div className="text-xs text-gray-400 space-y-1">
                                 <div>Email: {participant.data.email}</div>
                                 <div>Phone: {participant.data.phone}</div>
-                                {participant.data.groups && (
+                                {/* {participant.data.groups && (
                                   <div>Groups: {participant.data.groups}</div>
-                                )}
+                                )} */}
                               </div>
                             </div>
 

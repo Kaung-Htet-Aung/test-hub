@@ -4,6 +4,8 @@ import { addParticipant } from "../../services/admin/addParticipant";
 import { createError } from "../../utils/error";
 import { errorCode } from "../../utils/errorCode";
 import { getParticipants } from "../../services/admin/getParticipants";
+import { getParticipantByEmail } from "../../services/admin/getParticipantByEmail";
+import { checkUserExist } from "../../utils/check";
 const prisma = new PrismaClient();
 import { Request, Response, NextFunction } from "express";
 export const addOneParticipant = [
@@ -32,11 +34,22 @@ export const addOneParticipant = [
       note,
       groupId,
     };
-    const participant = await addParticipant(data);
-    res.status(201).json({
-      message: "Successfully created a new post",
-      participantId: participant.id,
-    });
+    try {
+      const user = await getParticipantByEmail(data.email);
+      checkUserExist(user);
+
+      const participant = await addParticipant(data);
+      res.status(201).json({
+        message: "Successfully created a new participant",
+        participantId: participant.id,
+      });
+    } catch (err: any) {
+      return res.status(err.status || 500).json({
+        success: false,
+        message: err.message || "Something went wrong",
+        code: err.code || "INTERNAL_ERROR",
+      });
+    }
   },
 ];
 
