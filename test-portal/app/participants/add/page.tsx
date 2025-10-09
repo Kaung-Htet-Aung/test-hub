@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { PageLayout } from "@/components/layout/page-layout";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useDropzone, type FileRejection } from "react-dropzone";
 import api from "@/lib/api";
 import {
   Select,
@@ -104,15 +105,115 @@ export default function AddParticipantPage() {
     success: true,
     message: "",
   };
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Partial<FormData>>({});
 
-  // CSV Upload States
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedParticipant[]>([]);
   const [showPreview, setShowPreview] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+
+  const parseCSV = (text: string): ParsedParticipant[] => {
+    const lines = text.split("\n").filter((line) => line.trim());
+    if (lines.length < 2) return [];
+
+    const headers = lines[0]
+      .split(",")
+      .map((h) => h.trim().replace(/^"|"$/g, ""));
+    const participants: ParsedParticipant[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i]
+        .split(",")
+        .map((v) => v.trim().replace(/^"|"$/g, ""));
+      const participant: ParticipantFormData = {
+        name: values[headers.indexOf("name")] || "",
+        email: values[headers.indexOf("email")] || "",
+        phone: values[headers.indexOf("phone")] || "",
+        note: values[headers.indexOf("note")] || "",
+        groupId: values[headers.indexOf("groupId")] || "",
+      };
+
+      const errors: string[] = [];
+
+      // Validation
+      if (!participant.name.trim()) errors.push("Name is required");
+      if (!participant.email.trim()) errors.push("Email is required");
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(participant.email))
+        errors.push("Invalid email format");
+      if (!participant.phone.trim()) errors.push("Phone is required");
+      else if (!/^[\d\s\-+()]+$/.test(participant.phone.replace(/\s/g, "")))
+        errors.push("Invalid phone format");
+
+      participants.push({
+        data: participant,
+        errors,
+        isValid: errors.length === 0,
+      });
+    }
+
+    return participants;
+  };
+
+  const handleFileUpload = useCallback((file: File) => {
+    setCsvFile(file);
+    setIsUploading(true);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+
+        const parsed = parseCSV(text);
+
+        setParsedData(parsed);
+        setShowPreview(true);
+      } catch (e: any) {
+        console.log(e);
+        toast.error("Failed to parse CSV file");
+      } finally {
+        setIsUploading(false);
+      }
+    };
+    reader.readAsText(file);
+  }, []);
+  const onDrop = useCallback(
+    (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
+      // Handle rejected files
+      if (rejectedFiles.length > 0) {
+        rejectedFiles.forEach((rejectedFile) => {
+          if (
+            rejectedFile.errors.some(
+              (error) => error.code === "file-invalid-type"
+            )
+          ) {
+            toast.error("Please upload only CSV files");
+          }
+        });
+        return;
+      }
+
+      // Handle accepted files
+      if (acceptedFiles.length > 0) {
+        handleFileUpload(acceptedFiles[0]);
+      }
+    },
+    [handleFileUpload]
+  );
+  const {
+    getRootProps,
+    getInputProps,
+    isDragActive,
+    isDragAccept,
+    isDragReject,
+  } = useDropzone({
+    onDrop,
+    accept: {
+      "text/csv": [".csv"],
+    },
+    maxFiles: 1,
+    disabled: isUploading,
+  });
   const { isPending, isError, data, error } = useQuery({
     queryKey: ["groups"],
     queryFn: getGroups,
@@ -172,121 +273,23 @@ export default function AddParticipantPage() {
     document.body.removeChild(link);
   };
 
-  const parseCSV = (text: string): ParsedParticipant[] => {
-    const lines = text.split("\n").filter((line) => line.trim());
-    if (lines.length < 2) return [];
-
-    const headers = lines[0]
-      .split(",")
-      .map((h) => h.trim().replace(/^"|"$/g, ""));
-    const participants: ParsedParticipant[] = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i]
-        .split(",")
-        .map((v) => v.trim().replace(/^"|"$/g, ""));
-      const participant: ParticipantFormData = {
-        name: values[headers.indexOf("name")] || "",
-        email: values[headers.indexOf("email")] || "",
-        phone: values[headers.indexOf("phone")] || "",
-        note: values[headers.indexOf("notes")] || "",
-        groupId: values[headers.indexOf("notes")] || "",
-      };
-
-      const errors: string[] = [];
-
-      // Validation
-      if (!participant.name.trim()) errors.push("Name is required");
-      if (!participant.email.trim()) errors.push("Email is required");
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(participant.email))
-        errors.push("Invalid email format");
-      if (!participant.phone.trim()) errors.push("Phone is required");
-      else if (!/^[\d\s\-+()]+$/.test(participant.phone.replace(/\s/g, "")))
-        errors.push("Invalid phone format");
-
-      participants.push({
-        data: participant,
-        errors,
-        isValid: errors.length === 0,
-      });
-    }
-
-    return participants;
-  };
-
-  const handleFileUpload = (file: File) => {
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-      toast.error("Please upload a CSV file");
-      return;
-    }
-
-    setCsvFile(file);
-    setIsUploading(true);
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const text = e.target?.result as string;
-        const parsed = parseCSV(text);
-        setParsedData(parsed);
-        setShowPreview(true);
-        toast.success(`Successfully parsed ${parsed.length} participants`);
-      } catch {
-        toast.error("Failed to parse CSV file");
-      } finally {
-        setIsUploading(false);
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      handleFileUpload(files[0]);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      handleFileUpload(files[0]);
-    }
-  };
-
   const handleBulkImport = async () => {
-    const validParticipants = parsedData.filter((p) => p.isValid);
-
-    if (validParticipants.length === 0) {
-      toast.error("No valid participants to import");
-      return;
-    }
-
+    if (!csvFile) return;
     setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", csvFile);
+
+    setIsUploading(false);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      toast.success(
-        `Successfully imported ${validParticipants.length} participants`
-      );
-      router.push("/participants");
-    } catch {
-      toast.error("Failed to import participants");
+      const response = await api.post("/admin/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      console.log(response);
+      toast.success(response.data.message);
+    } catch (e: any) {
+      console.log(e);
+      toast.error(e.response.data.error);
     } finally {
       setIsUploading(false);
     }
@@ -297,12 +300,14 @@ export default function AddParticipantPage() {
     setParsedData([]);
     setShowPreview(false);
   };
+
   async function onSubmit(formdata: z.infer<typeof participantSchema>) {
     try {
+      console.log("form", formdata);
       const response = await api.post("/admin/participants/", formdata);
       toast.success(response.data.message);
     } catch (e: any) {
-      toast.error(e.response.data.message);
+      console.log(e);
     }
   }
   return (
@@ -549,37 +554,37 @@ export default function AddParticipantPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div
-                      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                        isDragging
-                          ? "border-blue-500 bg-blue-500/10"
+                      {...getRootProps()}
+                      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+                        isDragActive
+                          ? isDragAccept
+                            ? "border-green-500 bg-green-500/10"
+                            : isDragReject
+                            ? "border-red-500 bg-red-500/10"
+                            : "border-blue-500 bg-blue-500/10"
                           : "border-gray-600 hover:border-gray-500"
                       }`}
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
                     >
+                      <input {...getInputProps()} />
                       <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <div className="space-y-2">
                         <p className="text-lg font-medium text-gray-100">
-                          Drop your CSV file here or click to browse
+                          {isDragActive
+                            ? isDragAccept
+                              ? "Drop the CSV file here..."
+                              : isDragReject
+                              ? "Please drop only CSV files"
+                              : "Drop the file here..."
+                            : "Drop your CSV file here or click to browse"}
                         </p>
                         <p className="text-sm text-gray-400">
                           Supports CSV files with the required columns: name,
                           email, phone
                         </p>
                       </div>
-                      <input
-                        type="file"
-                        accept=".csv"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                        id="csv-upload"
-                      />
                       <Button
                         variant="outline"
-                        onClick={() =>
-                          document.getElementById("csv-upload")?.click()
-                        }
+                        type="button"
                         className="mt-4 bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
                         disabled={isUploading}
                       >
@@ -736,6 +741,7 @@ export default function AddParticipantPage() {
                               <div className="text-xs text-gray-400 space-y-1">
                                 <div>Email: {participant.data.email}</div>
                                 <div>Phone: {participant.data.phone}</div>
+                                <div>groupId: {participant.data.groupId}</div>
                                 {/* {participant.data.groups && (
                                   <div>Groups: {participant.data.groups}</div>
                                 )} */}

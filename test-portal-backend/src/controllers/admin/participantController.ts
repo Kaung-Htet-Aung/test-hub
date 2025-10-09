@@ -27,6 +27,7 @@ export const addOneParticipant = [
       return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
     const { name, email, phone, note, groupId } = req.body;
+    console.log(name);
     const data = {
       name,
       email,
