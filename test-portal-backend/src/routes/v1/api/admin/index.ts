@@ -15,9 +15,39 @@ router.get("/groups", getAllGroups);
 
 router.post("/upload", upload.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+  const groupId = req.body.groupId;
+  const job = await csvQueue.add("processCsv", {
+    filePath: req.file.path,
+    groupId,
+  });
+  res.status(202).json({ message: "CSV upload started", jobId: job.id });
+});
 
-  await csvQueue.add("processCsv", { filePath: req.file.path });
-  res.json({ message: "File uploaded and queued for processing" });
+router.get("/upload-status/:id/stream", (req, res) => {
+  const jobId = req.params.id;
+
+  // Set headers for SSE
+  res.set({
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+  res.flushHeaders();
+
+  const interval = setInterval(async () => {
+    const job = await csvQueue.getJob(jobId);
+    if (!job) return;
+
+    const state = await job.getState();
+
+    if (state === "completed" || state === "failed") {
+      clearInterval(interval);
+      res.write(`data: ${JSON.stringify({ done: true, state })}\n\n`);
+      res.end();
+    }
+  }, 1000);
+
+  req.on("close", () => clearInterval(interval));
 });
 
 export default router;

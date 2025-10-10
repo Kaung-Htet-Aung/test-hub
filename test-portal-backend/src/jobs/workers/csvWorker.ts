@@ -3,6 +3,7 @@ import fs from "fs";
 import csv from "csv-parser";
 import { PrismaClient } from "@prisma/client";
 import { connection } from "../../utils/connection";
+
 interface CSVRow {
   name: string;
   email: string;
@@ -10,29 +11,13 @@ interface CSVRow {
   note: string;
   groupId: string;
 }
-type Data = {
-  name: string;
-  email: string;
-  phone: string;
-  note: string;
-  groupMembers: {
-    create: {
-      group: {
-        connect: {
-          id: string;
-        };
-      };
-    };
-  };
-};
 
 const prisma = new PrismaClient();
 const worker = new Worker(
   "csvQueue",
   async (job) => {
-    const { filePath } = job.data;
+    const { filePath, groupId } = job.data;
     const rows: CSVRow[] = [];
-    const datas: Data[] = [];
     await new Promise<void>((resolve, reject) => {
       fs.createReadStream(filePath)
         .pipe(csv())
@@ -40,17 +25,26 @@ const worker = new Worker(
         .on("end", resolve)
         .on("error", reject);
     });
-    const chunkSize = 500;
+    const chunkSize = 20;
+    const total = rows.length;
     try {
       for (let i = 0; i < rows.length; i += chunkSize) {
         const chunk = rows.slice(i, i + chunkSize);
+
+        for (let j = 0; j < chunk.length; j++) {
+          chunk[j].groupId = groupId;
+        }
 
         const createdUsers = await prisma.$transaction(
           // 1. Map over your input data array
           chunk.map((data) =>
             // 2. Return a prisma.user.create promise for each item
-            prisma.user.create({
-              data: {
+            prisma.user.upsert({
+              where: {
+                email: data.email,
+              },
+              update: {},
+              create: {
                 name: data.name,
                 email: data.email,
                 phone: data.phone,
@@ -71,8 +65,8 @@ const worker = new Worker(
             })
           )
         );
-        return { success: true, total: rows.length };
       }
+      return { success: true };
     } catch (e: any) {
       throw new Error(e.message || "CSV insert failed");
     }

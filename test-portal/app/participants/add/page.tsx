@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
 import { useDropzone, type FileRejection } from "react-dropzone";
 import api from "@/lib/api";
 import {
@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft,
@@ -110,8 +111,11 @@ export default function AddParticipantPage() {
 
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedParticipant[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [jobId, setJobId] = useState(null);
+  const [status, setStatus] = useState("waiting");
 
   const parseCSV = (text: string): ParsedParticipant[] => {
     const lines = text.split("\n").filter((line) => line.trim());
@@ -212,7 +216,7 @@ export default function AddParticipantPage() {
       "text/csv": [".csv"],
     },
     maxFiles: 1,
-    disabled: isUploading,
+    disabled: isUploading || isAdding,
   });
   const { isPending, isError, data, error } = useQuery({
     queryKey: ["groups"],
@@ -272,26 +276,45 @@ export default function AddParticipantPage() {
     link.click();
     document.body.removeChild(link);
   };
-
   const handleBulkImport = async () => {
     if (!csvFile) return;
-    setIsUploading(true);
+    setShowPreview(false);
+    setIsAdding(true);
+
     const formData = new FormData();
     formData.append("file", csvFile);
-
-    setIsUploading(false);
+    formData.append("groupId", "cmgl2ge5f0000cmajybd3keq6");
 
     try {
       const response = await api.post("/admin/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      console.log(response);
-      toast.success(response.data.message);
+      const data = response.data;
+      setJobId(data.jobId);
+      const evtSource = new EventSource(
+        `http://localhost:8080/api/v1/admin/upload-status/${data.jobId}/stream`
+      );
+
+      evtSource.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+
+        if (msg.done) {
+          setIsAdding(false);
+          evtSource.close();
+          toast.success("Upload finished! Your data has been added.");
+        }
+      };
+
+      evtSource.onerror = () => {
+        evtSource.close();
+        setIsAdding(false);
+        toast.error("Connection lost. Please retry your upload.");
+      };
+
+      // SSE
     } catch (e: any) {
       console.log(e);
       toast.error(e.response.data.error);
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -532,6 +555,26 @@ export default function AddParticipantPage() {
 
           {/* Bulk Upload */}
           <TabsContent value="bulk" className="space-y-6">
+            <Card className="bg-gray-900 border-gray-800">
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Select>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-gray-100">
+                      <SelectValue placeholder="Select a group to add" />
+                    </SelectTrigger>
+
+                    <SelectContent className="bg-gray-900 border-gray-800">
+                      {data.map((group: GroupData) => (
+                        <SelectItem key={group.id} value={group.id}>
+                          {group.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
             {!showPreview ? (
               <>
                 {/* Upload Area */}
@@ -556,7 +599,9 @@ export default function AddParticipantPage() {
                     <div
                       {...getRootProps()}
                       className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
-                        isDragActive
+                        isUploading || isAdding
+                          ? "opacity-50 cursor-not-allowed"
+                          : isDragActive
                           ? isDragAccept
                             ? "border-green-500 bg-green-500/10"
                             : isDragReject
@@ -569,7 +614,11 @@ export default function AddParticipantPage() {
                       <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <div className="space-y-2">
                         <p className="text-lg font-medium text-gray-100">
-                          {isDragActive
+                          {isUploading
+                            ? "Uploading in progress..."
+                            : isAdding
+                            ? "Adding participants in progress.."
+                            : isDragActive
                             ? isDragAccept
                               ? "Drop the CSV file here..."
                               : isDragReject
@@ -577,29 +626,30 @@ export default function AddParticipantPage() {
                               : "Drop the file here..."
                             : "Drop your CSV file here or click to browse"}
                         </p>
-                        <p className="text-sm text-gray-400">
-                          Supports CSV files with the required columns: name,
-                          email, phone
-                        </p>
                       </div>
-                      <Button
-                        variant="outline"
-                        type="button"
-                        className="mt-4 bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
-                        disabled={isUploading}
-                      >
-                        {isUploading ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
+                      {isUploading || isAdding ? (
+                        <>
+                          <div className="flex text-white justify-end text-sm">
+                            <span>Please wait...</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm text-gray-400">
+                            Supports CSV files with the required columns: name,
+                            email, phone
+                          </p>
+                          <Button
+                            variant="outline"
+                            type="button"
+                            className="mt-4 bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
+                            disabled={isUploading}
+                          >
                             <FileText className="h-4 w-4 mr-2" />
                             Select File
-                          </>
-                        )}
-                      </Button>
+                          </Button>
+                        </>
+                      )}
                     </div>
 
                     {csvFile && (
@@ -676,7 +726,6 @@ export default function AddParticipantPage() {
               </>
             ) : (
               <>
-                {/* Preview Section */}
                 <Card className="bg-gray-900 border-gray-800">
                   <CardHeader>
                     <div className="flex items-center justify-between">
