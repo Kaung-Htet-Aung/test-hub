@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Search, User, Bell, Menu } from "lucide-react"
-import { useApp } from "@/contexts/app-context"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, User, Bell, Menu } from "lucide-react";
+import { useApp } from "@/contexts/app-context";
 
 export function Header() {
-  const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useApp()
+  const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useApp();
 
   return (
     <header className="bg-gray-900 border-b border-gray-800 px-4 sm:px-6 lg:px-8 py-4">
@@ -22,7 +22,7 @@ export function Header() {
             <Menu className="h-5 w-5" />
           </Button>
         </div>
-        
+
         {/* Search input - takes available space */}
         <div className="flex items-center gap-4 sm:gap-6 flex-1 min-w-0 mx-2 sm:mx-0">
           <div className="relative flex-1 min-w-0">
@@ -33,13 +33,17 @@ export function Header() {
             />
           </div>
         </div>
-        
+
         {/* User controls - fixed width */}
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-          <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-200 hover:bg-gray-800">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+          >
             <Bell className="h-5 w-5" />
           </Button>
-          
+
           <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-gray-800">
             <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
               <User className="h-4 w-4 text-gray-300" />
@@ -51,5 +55,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }

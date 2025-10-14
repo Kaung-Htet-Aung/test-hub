@@ -6,12 +6,16 @@ import {
   getAllParticipants,
 } from "../../../../controllers/admin/participantController";
 import { getAllGroups } from "../../../../controllers/admin/groupController";
+import { generateQuestions } from "../../../../controllers/admin/generateQuestions";
+import { addQuestion } from "../../../../controllers/admin/questionController";
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
 router.post("/participants", addOneParticipant);
 router.get("/participants", getAllParticipants);
 router.get("/groups", getAllGroups);
+router.post("/generate-questions", generateQuestions);
+router.post("/add-questions", addQuestion);
 
 router.post("/upload", upload.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });

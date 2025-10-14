@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, FileCheck, Clock } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, FileCheck, Clock } from "lucide-react";
 
 export function StatsCards() {
   const stats = [
@@ -10,23 +10,23 @@ export function StatsCards() {
       value: "150",
       icon: Users,
       change: "+12%",
-      period: "vs last month"
+      period: "vs last month",
     },
     {
       title: "Active Tests",
       value: "5",
       icon: FileCheck,
       change: "+2",
-      period: "new this week"
+      period: "new this week",
     },
     {
       title: "Upcoming Tests",
       value: "3",
       icon: Clock,
       change: "-1",
-      period: "from last week"
-    }
-  ]
+      period: "from last week",
+    },
+  ];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -43,18 +43,20 @@ export function StatsCards() {
               {stat.value}
             </div>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`text-xs ${
-                stat.change.startsWith('+') ? 'text-green-400' : 'text-red-400'
-              }`}>
+              <span
+                className={`text-xs ${
+                  stat.change.startsWith("+")
+                    ? "text-green-400"
+                    : "text-red-400"
+                }`}
+              >
                 {stat.change}
               </span>
-              <span className="text-xs text-gray-500">
-                {stat.period}
-              </span>
+              <span className="text-xs text-gray-500">{stat.period}</span>
             </div>
           </CardContent>
         </Card>
       ))}
     </div>
-  )
+  );
 }

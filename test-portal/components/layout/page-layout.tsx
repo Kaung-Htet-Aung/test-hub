@@ -5,7 +5,6 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { BreadcrumbNavigation } from "@/components/layout/breadcrumb-navigation";
 import { NavigationControls } from "@/components/layout/navigation-controls";
-import { usePathname } from "next/navigation";
 import { useApp } from "@/contexts/app-context";
 
 interface PageLayoutProps {
@@ -21,7 +20,6 @@ export function PageLayout({
   description,
   actions,
 }: PageLayoutProps) {
-  const pathname = usePathname();
   const { isSidebarCollapsed } = useApp();
 
   return (

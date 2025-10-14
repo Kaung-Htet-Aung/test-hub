@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { 
-  LayoutDashboard, 
-  Users, 
-  FileText, 
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  Users,
+  FileText,
   Settings,
   BookOpen,
   MessageSquare,
   TrendingUp,
   Menu,
-  X
-} from "lucide-react"
-import { useState } from "react"
-import { useApp } from "@/contexts/app-context"
+  X,
+} from "lucide-react";
+import { useState } from "react";
+import { useApp } from "@/contexts/app-context";
 
 const sidebarItems = [
   {
@@ -54,28 +54,37 @@ const sidebarItems = [
     icon: Settings,
     href: "/settings",
   },
-]
+];
 
 export function Sidebar() {
-  const pathname = usePathname()
-  const { isSidebarCollapsed, setIsSidebarCollapsed, isMobileSidebarOpen, setIsMobileSidebarOpen } = useApp()
+  const pathname = usePathname();
+  const {
+    isSidebarCollapsed,
+    setIsSidebarCollapsed,
+    isMobileSidebarOpen,
+    setIsMobileSidebarOpen,
+  } = useApp();
 
   return (
     <>
       {/* Mobile overlay */}
       {isMobileSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={() => setIsMobileSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <div className={cn(
-        "fixed inset-y-0 left-0 z-50 border-r border-gray-800 bg-gray-900 transition-all duration-200",
-        isSidebarCollapsed ? "lg:w-16" : "lg:w-64 w-64", // Collapsed on desktop, always 64px on mobile
-        isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      )}>
+      <div
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 border-r border-gray-800 bg-gray-900 transition-all duration-200",
+          isSidebarCollapsed ? "lg:w-16" : "lg:w-64 w-64", // Collapsed on desktop, always 64px on mobile
+          isMobileSidebarOpen
+            ? "translate-x-0"
+            : "-translate-x-full lg:translate-x-0"
+        )}
+      >
         <div className="flex flex-col h-full">
           <div className="p-4 sm:p-6 border-b border-gray-800">
             <div className="flex items-center justify-between">
@@ -98,7 +107,7 @@ export function Sidebar() {
                     )}
                   </div>
                 </Button>
-                
+
                 {/* Mobile close button */}
                 <Button
                   variant="ghost"
@@ -111,28 +120,29 @@ export function Sidebar() {
               </div>
             </div>
           </div>
-          
+
           <nav className="flex-1 p-2 sm:p-4">
             <ul className="space-y-1">
               {sidebarItems.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} onClick={() => setIsMobileSidebarOpen(false)}>
+                  <Link
+                    href={item.href}
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                  >
                     <Button
                       variant="ghost"
                       className={cn(
                         "w-full justify-start text-gray-400 hover:text-gray-100 hover:bg-gray-800",
-                        isSidebarCollapsed && "lg:justify-center lg:px-2 lg:px-3",
+                        isSidebarCollapsed &&
+                          "lg:justify-center lg:px-2 lg:px-3",
                         pathname === item.href && "text-gray-100 bg-gray-800"
                       )}
                     >
-                      <item.icon className={cn(
-                        "h-4 w-4",
-                        !isSidebarCollapsed && "mr-3"
-                      )} />
+                      <item.icon
+                        className={cn("h-4 w-4", !isSidebarCollapsed && "mr-3")}
+                      />
                       {!isSidebarCollapsed && (
-                        <span className="text-sm">
-                          {item.title}
-                        </span>
+                        <span className="text-sm">{item.title}</span>
                       )}
                     </Button>
                   </Link>
@@ -143,5 +153,5 @@ export function Sidebar() {
         </div>
       </div>
     </>
-  )
+  );
 }

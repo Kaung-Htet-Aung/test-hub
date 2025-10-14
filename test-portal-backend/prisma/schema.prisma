@@ -22,7 +22,7 @@ model User {
   createdTests  Test[]             @relation("CreatedTests")
   assignments   TestAssignment[]
   attempts      TestAttempt[]
-  groupMembers  GroupParticipant[]
+  batchMembers  BatchParticipant[]
 }
 
 enum UserRole {
@@ -42,12 +42,14 @@ model Test {
   description   String?
   createdById   String // Changed
   createdAt     DateTime      @default(now())
-
+  groupId       String
   // Relations
+  group         QuestionGroup @relation(fields: [groupId], references: [id])
   createdBy     User          @relation("CreatedTests", fields: [createdById], references: [id])
   assignments   TestAssignment[]
   attempts      TestAttempt[]
-  groupTests    GroupTest[]
+  batchTests    BatchTest[]
+  
 }
 
 model TestAssignment {
@@ -78,35 +80,62 @@ model TestAttempt {
   @@unique([userId, testId])
 }
 
-model Group {
+model Batch {
   id        String    @id @default(cuid()) // Changed
   name      String
   createdAt DateTime  @default(now())
 
   // Relations
-  participants GroupParticipant[]
-  tests        GroupTest[]
+  participants BatchParticipant[]
+  tests        BatchTest[]
 }
 
-model GroupParticipant {
+model BatchParticipant {
   id        String   @id @default(cuid()) // Changed
   groupId   String // Changed
   userId    String // Changed
   joinedAt  DateTime @default(now())
 
-  group     Group @relation(fields: [groupId], references: [id])
+  batch     Batch @relation(fields: [groupId], references: [id])
   user      User  @relation(fields: [userId], references: [id])
 
   @@unique([groupId, userId])
 }
 
-model GroupTest {
+model BatchTest {
   id      String @id @default(cuid()) // Changed
   groupId String // Changed
   testId  String // Changed
 
-  group   Group @relation(fields: [groupId], references: [id])
+  batch   Batch @relation(fields: [groupId], references: [id])
   test    Test  @relation(fields: [testId], references: [id])
 
   @@unique([groupId, testId])
 }
+
+
+model QuestionGroup {
+  id          String      @id @default(cuid())
+  name        String
+  questions   Question[]
+  createdAt   DateTime    @default(now())
+ 
+
+  Test Test[]
+}
+
+model Question {
+  id            String  @id @default(cuid())
+  question      String
+  type          String
+  difficulty    String
+  options       String[]    // store array of options
+  correctAnswer String
+  explanation   String?
+  points        Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  groupId       String
+  group         QuestionGroup @relation(fields: [groupId], references: [id])
+}
+

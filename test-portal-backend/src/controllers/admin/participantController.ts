@@ -75,9 +75,9 @@ export const getParticipantById = async (req: Request, res: Response) => {
         id: id,
       },
       include: {
-        groupMembers: {
+        batchMembers: {
           select: {
-            group: {
+            batch: {
               select: { name: true },
             },
           },

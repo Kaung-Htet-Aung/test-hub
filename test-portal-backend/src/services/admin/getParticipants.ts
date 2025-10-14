@@ -12,10 +12,10 @@ export const getParticipants = async () => {
       createdAt: "desc",
     },
     include: {
-      groupMembers: {
+      batchMembers: {
         select: {
           joinedAt: true,
-          group: {
+          batch: {
             select: {
               id: true,
               name: true,

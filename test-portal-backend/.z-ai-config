@@ -1,0 +1,4 @@
+{
+  "apiKey": "389df2a71a9648f6ab487bb68446ab10",
+  "endpoint": "https://api.openai.com/v1/chat/completions"
+}

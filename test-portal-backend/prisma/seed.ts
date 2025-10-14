@@ -10,7 +10,7 @@ async function main() {
   // NOTE: If GroupParticipant and GroupTest exist, you may need to delete them first
   // if you have cascading deletes not set up, or just delete Groups.
   // For this example, we'll assume no related data exists yet or you are resetting.
-  await prisma.group.deleteMany();
+  await prisma.batch.deleteMany();
   console.log("Cleared existing Group data.");
 
   // 2. Insert data using createMany() for efficiency
@@ -21,7 +21,7 @@ async function main() {
     { name: "Introduction to Data Science" },
   ];
 
-  const result = await prisma.group.createMany({
+  const result = await prisma.batch.createMany({
     data: groupData,
     skipDuplicates: true, // Prevents errors if a record somehow already exists
   });
@@ -30,7 +30,7 @@ async function main() {
   console.log(`Seeding complete. Inserted ${result.count} new groups. ✅`);
 
   // Optional: You can get all the created groups to display them
-  const allGroups = await prisma.group.findMany();
+  const allGroups = await prisma.batch.findMany();
   console.log("Current Groups in DB:", allGroups.map((g) => g.name).join(", "));
 }
 

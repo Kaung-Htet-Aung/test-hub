@@ -1,45 +1,45 @@
-"use client"
+"use client";
 
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export function NavigationControls() {
-  const router = useRouter()
-  const [canGoBack, setCanGoBack] = useState(false)
-  const [canGoForward, setCanGoForward] = useState(false)
+  const router = useRouter();
+  const [canGoBack, setCanGoBack] = useState(false);
+  const [canGoForward, setCanGoForward] = useState(false);
 
   // Check if browser navigation is available
   useEffect(() => {
     const checkNavigationAvailability = () => {
-      setCanGoBack(window.history.length > 1)
-      setCanGoForward(window.history.state?.idx < window.history.length - 1)
-    }
+      setCanGoBack(window.history.length > 1);
+      setCanGoForward(window.history.state?.idx < window.history.length - 1);
+    };
 
-    checkNavigationAvailability()
-    window.addEventListener('popstate', checkNavigationAvailability)
-    
+    checkNavigationAvailability();
+    window.addEventListener("popstate", checkNavigationAvailability);
+
     return () => {
-      window.removeEventListener('popstate', checkNavigationAvailability)
-    }
-  }, [])
+      window.removeEventListener("popstate", checkNavigationAvailability);
+    };
+  }, []);
 
   const handleBack = () => {
     if (canGoBack) {
-      router.back()
+      router.back();
     }
-  }
+  };
 
   const handleForward = () => {
     if (canGoForward) {
-      router.forward()
+      router.forward();
     }
-  }
+  };
 
   const handleRefresh = () => {
-    router.refresh()
-  }
+    router.refresh();
+  };
 
   return (
     <div className="flex items-center gap-1">
@@ -56,7 +56,7 @@ export function NavigationControls() {
       >
         <ArrowLeft className="h-4 w-4" />
       </Button>
-      
+
       <Button
         variant="ghost"
         size="icon"
@@ -70,7 +70,7 @@ export function NavigationControls() {
       >
         <ArrowRight className="h-4 w-4" />
       </Button>
-      
+
       <Button
         variant="ghost"
         size="icon"
@@ -81,10 +81,10 @@ export function NavigationControls() {
         <RotateCcw className="h-4 w-4" />
       </Button>
     </div>
-  )
+  );
 }
 
 // Helper function for conditional class names
 function cn(...classes: (string | undefined | null | boolean)[]): string {
-  return classes.filter(Boolean).join(' ')
+  return classes.filter(Boolean).join(" ");
 }

@@ -14,9 +14,9 @@ export const addParticipant = async (data: Participant) => {
     email: data.email,
     phone: data.phone,
     note: data.note,
-    groupMembers: {
+    batchMembers: {
       create: {
-        group: {
+        batch: {
           connect: { id: data.groupId },
         },
       },

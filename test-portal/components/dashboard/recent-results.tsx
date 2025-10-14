@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Button } from "@/components/ui/button"
-import { useState } from "react"
-import { TrendingUp, Eye } from "lucide-react"
-import { ResultDetailModal } from "./result-detail-modal"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { TrendingUp, Eye } from "lucide-react";
+import { ResultDetailModal } from "./result-detail-modal";
 
 const recentResults = [
   {
@@ -22,7 +22,7 @@ const recentResults = [
     correctAnswers: 17,
     timeSpent: "135m",
     startTime: "2024-01-15 14:00",
-    endTime: "2024-01-15 16:15"
+    endTime: "2024-01-15 16:15",
   },
   {
     id: 2,
@@ -38,7 +38,7 @@ const recentResults = [
     correctAnswers: 23,
     timeSpent: "105m",
     startTime: "2024-01-15 12:00",
-    endTime: "2024-01-15 13:45"
+    endTime: "2024-01-15 13:45",
   },
   {
     id: 3,
@@ -54,7 +54,7 @@ const recentResults = [
     correctAnswers: 23,
     timeSpent: "200m",
     startTime: "2024-01-15 09:00",
-    endTime: "2024-01-15 12:20"
+    endTime: "2024-01-15 12:20",
   },
   {
     id: 4,
@@ -70,18 +70,20 @@ const recentResults = [
     correctAnswers: 19,
     timeSpent: "150m",
     startTime: "2024-01-14 15:00",
-    endTime: "2024-01-14 17:30"
-  }
-]
+    endTime: "2024-01-14 17:30",
+  },
+];
 
 export function RecentResults() {
-  const [selectedResult, setSelectedResult] = useState<typeof recentResults[0] | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedResult, setSelectedResult] = useState<
+    (typeof recentResults)[0] | null
+  >(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleViewDetails = (result: typeof recentResults[0]) => {
-    setSelectedResult(result)
-    setIsModalOpen(true)
-  }
+  const handleViewDetails = (result: (typeof recentResults)[0]) => {
+    setSelectedResult(result);
+    setIsModalOpen(true);
+  };
 
   return (
     <>
@@ -92,7 +94,11 @@ export function RecentResults() {
               <TrendingUp className="h-4 w-4 text-gray-500" />
               Recent Results
             </CardTitle>
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-200 hover:bg-gray-800">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+            >
               View All
             </Button>
           </div>
@@ -100,7 +106,10 @@ export function RecentResults() {
         <CardContent>
           <div className="space-y-4">
             {recentResults.map((result) => (
-              <div key={result.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-800">
+              <div
+                key={result.id}
+                className="flex items-center justify-between p-3 rounded-lg border border-gray-800"
+              >
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-100">
@@ -115,19 +124,14 @@ export function RecentResults() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex-1 mr-4">
-                      <Progress 
-                        value={result.score} 
-                        className="h-1"
-                      />
+                      <Progress value={result.score} className="h-1" />
                     </div>
-                    <span className="text-xs text-gray-500">
-                      {result.date}
-                    </span>
+                    <span className="text-xs text-gray-500">{result.date}</span>
                   </div>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="ml-4 text-gray-400 hover:text-gray-200 hover:bg-gray-800"
                   onClick={() => handleViewDetails(result)}
                   title="View detailed results"
@@ -146,5 +150,5 @@ export function RecentResults() {
         result={selectedResult}
       />
     </>
-  )
+  );
 }
