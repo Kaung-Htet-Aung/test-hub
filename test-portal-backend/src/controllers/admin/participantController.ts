@@ -26,14 +26,14 @@ export const addOneParticipant = [
     if (errors.length > 0) {
       return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
-    const { name, email, phone, note, groupId } = req.body;
+    const { name, email, phone, note, batchId } = req.body;
     console.log(name);
     const data = {
       name,
       email,
       phone,
       note,
-      groupId,
+      batchId,
     };
     try {
       const user = await getParticipantByEmail(data.email);

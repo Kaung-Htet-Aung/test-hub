@@ -19,7 +19,6 @@ model User {
   lastActivity  DateTime?
 
   // Relations
-  createdTests  Test[]             @relation("CreatedTests")
   assignments   TestAssignment[]
   attempts      TestAttempt[]
   batchMembers  BatchParticipant[]
@@ -35,17 +34,27 @@ enum UserStatus {
   ACTIVE
   INACTIVE
 }
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
 
 model Test {
-  id            String        @id @default(cuid()) // Changed
-  title         String
-  description   String?
-  createdById   String // Changed
-  createdAt     DateTime      @default(now())
-  groupId       String
-  // Relations
+  id                       String    @id @default(cuid())
+  title                    String
+  description              String?
+  instructions             String?
+  passingScore             Int?
+  timeLimit                Int?       // in minutes
+  scheduledDateTime        DateTime
+  notifyBeforeStartMinutes Int?       // e.g., 15 minutes before test start
+  difficulty               Difficulty @default(MEDIUM)
+  createdAt                DateTime   @default(now())
+  updatedAt                DateTime   @updatedAt
+  groupId                  String
+
   group         QuestionGroup @relation(fields: [groupId], references: [id])
-  createdBy     User          @relation("CreatedTests", fields: [createdById], references: [id])
   assignments   TestAssignment[]
   attempts      TestAttempt[]
   batchTests    BatchTest[]
@@ -92,25 +101,25 @@ model Batch {
 
 model BatchParticipant {
   id        String   @id @default(cuid()) // Changed
-  groupId   String // Changed
+  batchId   String // Changed
   userId    String // Changed
   joinedAt  DateTime @default(now())
 
-  batch     Batch @relation(fields: [groupId], references: [id])
+  batch     Batch @relation(fields: [batchId], references: [id])
   user      User  @relation(fields: [userId], references: [id])
 
-  @@unique([groupId, userId])
+  @@unique([batchId, userId])
 }
 
 model BatchTest {
   id      String @id @default(cuid()) // Changed
-  groupId String // Changed
+  batchId String // Changed
   testId  String // Changed
 
-  batch   Batch @relation(fields: [groupId], references: [id])
+  batch   Batch @relation(fields: [batchId], references: [id])
   test    Test  @relation(fields: [testId], references: [id])
 
-  @@unique([groupId, testId])
+  @@unique([batchId, testId])
 }
 
 

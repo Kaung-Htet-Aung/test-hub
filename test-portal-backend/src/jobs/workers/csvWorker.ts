@@ -9,14 +9,14 @@ interface CSVRow {
   email: string;
   phone: string;
   note: string;
-  groupId: string;
+  batchId: string;
 }
 
 const prisma = new PrismaClient();
 const worker = new Worker(
   "csvQueue",
   async (job) => {
-    const { filePath, groupId } = job.data;
+    const { filePath, batchId } = job.data;
     const rows: CSVRow[] = [];
     await new Promise<void>((resolve, reject) => {
       fs.createReadStream(filePath)
@@ -32,7 +32,7 @@ const worker = new Worker(
         const chunk = rows.slice(i, i + chunkSize);
 
         for (let j = 0; j < chunk.length; j++) {
-          chunk[j].groupId = groupId;
+          chunk[j].batchId = batchId;
         }
 
         const createdUsers = await prisma.$transaction(
@@ -50,17 +50,17 @@ const worker = new Worker(
                 phone: data.phone,
                 note: data.note,
                 // 3. This is the nested write that creates the relation
-                groupMembers: {
+                batchMembers: {
                   create: {
-                    group: {
-                      connect: { id: data.groupId },
+                    batch: {
+                      connect: { id: data.batchId },
                     },
                   },
                 },
               },
               // Optionally include the relation in the returned object
               include: {
-                groupMembers: true,
+                batchMembers: true,
               },
             })
           )

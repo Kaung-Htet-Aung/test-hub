@@ -1,8 +1,8 @@
 import api from "./api";
 
-export const getGroups = async () => {
+export const getQuestionSets = async () => {
   try {
-    const response = await api.get("/admin/batches");
+    const response = await api.get("/admin/questionsets");
     console.log(response);
     return response.data;
   } catch (e) {

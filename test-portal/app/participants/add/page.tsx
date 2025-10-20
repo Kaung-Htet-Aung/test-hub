@@ -57,7 +57,7 @@ interface ParticipantFormData {
   email: string;
   phone: string;
   note?: string;
-  groupId: string;
+  batchId: string;
 }
 
 interface ParsedParticipant {
@@ -66,7 +66,7 @@ interface ParsedParticipant {
   isValid: boolean;
 }
 
-interface GroupData {
+interface BatchData {
   id: string;
   name: string;
 }
@@ -79,7 +79,7 @@ const participantSchema = z.object({
     .nonempty("Phone number is required")
     .regex(/^[\d\s\-+()]+$/, "Please enter a valid phone number"),
   note: z.string().optional(),
-  groupId: z.string().trim().nonempty(),
+  batchId: z.string().trim().nonempty(),
 });
 export default function AddParticipantPage() {
   const router = useRouter();
@@ -90,7 +90,7 @@ export default function AddParticipantPage() {
       email: "",
       phone: "",
       note: "",
-      groupId: "",
+      batchId: "",
     },
   });
   type State = {
@@ -135,7 +135,7 @@ export default function AddParticipantPage() {
         email: values[headers.indexOf("email")] || "",
         phone: values[headers.indexOf("phone")] || "",
         note: values[headers.indexOf("note")] || "",
-        groupId: values[headers.indexOf("groupId")] || "",
+        batchId: values[headers.indexOf("batchId")] || "",
       };
 
       const errors: string[] = [];
@@ -283,7 +283,7 @@ export default function AddParticipantPage() {
 
     const formData = new FormData();
     formData.append("file", csvFile);
-    formData.append("groupId", "cmgl2ge5f0000cmajybd3keq6");
+    formData.append("batchId", "cmgqph1kl0000nlv03tn923ds");
 
     try {
       const response = await api.post("/admin/upload", formData, {
@@ -461,7 +461,7 @@ export default function AddParticipantPage() {
                     <div className="space-y-2">
                       <FormField
                         control={form.control}
-                        name="groupId"
+                        name="batchId"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-gray-300">
@@ -477,9 +477,9 @@ export default function AddParticipantPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent className="bg-gray-900 border-gray-800">
-                                {data.map((group: GroupData) => (
-                                  <SelectItem key={group.id} value={group.id}>
-                                    {group.name}
+                                {data.map((batch: BatchData) => (
+                                  <SelectItem key={batch.id} value={batch.id}>
+                                    {batch.name}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -564,9 +564,9 @@ export default function AddParticipantPage() {
                     </SelectTrigger>
 
                     <SelectContent className="bg-gray-900 border-gray-800">
-                      {data.map((group: GroupData) => (
-                        <SelectItem key={group.id} value={group.id}>
-                          {group.name}
+                      {data.map((batch: BatchData) => (
+                        <SelectItem key={batch.id} value={batch.id}>
+                          {batch.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -790,7 +790,7 @@ export default function AddParticipantPage() {
                               <div className="text-xs text-gray-400 space-y-1">
                                 <div>Email: {participant.data.email}</div>
                                 <div>Phone: {participant.data.phone}</div>
-                                <div>groupId: {participant.data.groupId}</div>
+                                <div>groupId: {participant.data.batchId}</div>
                                 {/* {participant.data.groups && (
                                   <div>Groups: {participant.data.groups}</div>
                                 )} */}

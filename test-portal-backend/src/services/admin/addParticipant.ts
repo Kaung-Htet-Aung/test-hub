@@ -4,7 +4,7 @@ interface Participant {
   email: string;
   phone: string;
   note: string;
-  groupId: string;
+  batchId: string;
 }
 const prisma = new PrismaClient();
 
@@ -17,7 +17,7 @@ export const addParticipant = async (data: Participant) => {
     batchMembers: {
       create: {
         batch: {
-          connect: { id: data.groupId },
+          connect: { id: data.batchId },
         },
       },
     },

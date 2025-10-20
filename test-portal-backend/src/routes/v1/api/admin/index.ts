@@ -8,21 +8,26 @@ import {
 import { getAllGroups } from "../../../../controllers/admin/groupController";
 import { generateQuestions } from "../../../../controllers/admin/generateQuestions";
 import { addQuestion } from "../../../../controllers/admin/questionController";
+import { createTests } from "../../../../controllers/admin/testController";
+import { createTestValidator } from "../../../../validators/createTestValidator";
+import { getAllQuestionSets } from "../../../../controllers/admin/questionController";
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
 router.post("/participants", addOneParticipant);
 router.get("/participants", getAllParticipants);
-router.get("/groups", getAllGroups);
+router.get("/batches", getAllGroups);
 router.post("/generate-questions", generateQuestions);
 router.post("/add-questions", addQuestion);
+router.post("/create-test", createTestValidator, createTests);
+router.get("/questionsets", getAllQuestionSets);
 
 router.post("/upload", upload.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-  const groupId = req.body.groupId;
+  const batchId = req.body.batchId;
   const job = await csvQueue.add("processCsv", {
     filePath: req.file.path,
-    groupId,
+    batchId,
   });
   res.status(202).json({ message: "CSV upload started", jobId: job.id });
 });

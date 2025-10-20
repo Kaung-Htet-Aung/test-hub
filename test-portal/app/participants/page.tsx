@@ -49,9 +49,9 @@ interface Participant {
   role: "PARTICIPANT" | "ADMIN";
   status: "ACTIVE" | "INACTIVE" | "PENDING";
   joinDate: string;
-  groupMembers: {
+  batchMembers: {
     joinedAt: string;
-    group: {
+    batch: {
       id: string;
       name: string;
     };
@@ -111,7 +111,7 @@ export default function ParticipantsPage() {
       statusFilter === "all" || participant.status === statusFilter;
     const matchesGroup =
       groupFilter === "all" ||
-      participant.groupMembers[index].group.name.includes(groupFilter);
+      participant.batchMembers[index].batch.name.includes(groupFilter);
 
     return matchesSearch && matchesStatus && matchesGroup;
   });
@@ -305,9 +305,9 @@ export default function ParticipantsPage() {
                       </Badge>
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3 text-gray-400" />
-                        <span className="text-xs text-gray-400">
-                          Joined {participant.groupMembers[0].joinedAt}
-                        </span>
+                        {/* <span className="text-xs text-gray-400">
+                          Joined {participant.batchMembers[0].joinedAt}
+                        </span> */}
                       </div>
                     </div>
                   </div>
@@ -389,11 +389,11 @@ export default function ParticipantsPage() {
                 <div className="flex flex-wrap gap-2">
                   -
                   <Badge
-                    key={participant.groupMembers[0].group.id}
+                    key={participant.batchMembers[0].batch.id}
                     variant="outline"
                     className="border-gray-600 text-gray-300 text-xs"
                   >
-                    {participant.groupMembers[0].group.name}
+                    {participant.batchMembers[0].batch.name}
                   </Badge>
                 </div>
               </div>

@@ -41,6 +41,7 @@ import {
   getDifficultyColor,
   getScoreColor,
 } from "@/lib/utils";
+import Link from "next/link";
 
 interface Test {
   id: string;
@@ -177,10 +178,12 @@ export default function TestsPage() {
         <Copy className="h-4 w-4 mr-2" />
         Duplicate
       </Button>
-      <Button className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700">
-        <Plus className="h-4 w-4 mr-2" />
-        Create Test
-      </Button>
+      <Link href="/tests/create/">
+        <Button className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Test
+        </Button>
+      </Link>
     </div>
   );
 
