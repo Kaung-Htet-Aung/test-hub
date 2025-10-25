@@ -24,7 +24,7 @@ export const createTests = async (
   }
 
   const test = req.body;
-
+  console.log(test);
   try {
     await createTest(test);
 

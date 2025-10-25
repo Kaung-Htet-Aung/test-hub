@@ -1,5 +1,5 @@
-import { Prisma, PrismaClient } from "@prisma/client";
-import { group } from "console";
+import { PrismaClient } from "@prisma/client";
+
 interface ManualQuestionData {
   question: string;
   type: "multiple-choice" | "short-answer" | "coding";

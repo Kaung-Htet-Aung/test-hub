@@ -34,7 +34,8 @@ export const createTestValidator = [
     .isInt({ min: 1, max: 1440 })
     .withMessage("Notify before must be between 1 and 1440 minutes"),
 
-  body("batchId").notEmpty().withMessage("Category is required"),
+  body("batchId").notEmpty().withMessage("BatchId is required"),
+  body("groupId").notEmpty().withMessage("QuestionSet Id is required"),
 
   body("difficulty")
     .optional()

@@ -23,14 +23,17 @@ import * as z from "zod";
 import { getGroups } from "@/lib/getGroups";
 import { getQuestionSets } from "@/lib/getQuestionSet";
 import { useQueries } from "@tanstack/react-query";
+import api from "@/lib/api";
+
 // Zod schema for form validation
 const testFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  batch: z.string().min(1, "Batch is required"),
-  question: z.string().min(1, "Question is required"),
+  batchId: z.string().min(1, "Batch is required"),
+  groupId: z.string().min(1, "Question is required"),
 
-  difficulty: z.enum(["easy", "medium", "hard"]),
+  difficulty: z.string().min(1, "difficulty is required"),
+
   timeLimit: z.number().min(1, "Time limit must be at least 1 minute"),
   passingScore: z
     .number()
@@ -49,6 +52,7 @@ interface BatchData {
   id: string;
   name: string;
 }
+
 // Constants
 const TEST_CONSTANTS = {
   CATEGORIES: [
@@ -85,8 +89,8 @@ export default function CreateTestPage() {
     defaultValues: {
       title: "",
       description: "",
-      batch: "",
-      question: "",
+      batchId: "",
+      groupId: "",
       difficulty: "medium",
       timeLimit: TEST_CONSTANTS.DEFAULT_VALUES.TIME_LIMIT,
       passingScore: TEST_CONSTANTS.DEFAULT_VALUES.PASSING_SCORE,
@@ -103,7 +107,12 @@ export default function CreateTestPage() {
     try {
       // API call to create test
       console.log(data);
-
+      const response = await api.post("/admin/create-test", data);
+      const result = await response.data;
+      console.log(result);
+      if (!response) {
+        throw new Error(result.error || "Failed to save questions");
+      }
       toast.success("Test created successfully!");
       router.push("/tests");
     } catch (error) {
@@ -136,7 +145,7 @@ export default function CreateTestPage() {
   if (error) {
     return <span>error</span>;
   }
-  const questions = results[0].data;
+  const questions: BatchData[] = results[0].data;
 
   const batches: BatchData[] = results[1].data;
   return (
@@ -268,7 +277,7 @@ export default function CreateTestPage() {
                       Batches
                     </Label>
                     <Select
-                      onValueChange={(value) => setValue("batch", value)}
+                      onValueChange={(value) => setValue("batchId", value)}
                       defaultValue=""
                     >
                       <SelectTrigger className="bg-gray-800 border-gray-700 text-gray-100 h-10 w-full">
@@ -276,15 +285,15 @@ export default function CreateTestPage() {
                       </SelectTrigger>
                       <SelectContent className="bg-gray-900 border-gray-800">
                         {batches.map((batch: BatchData) => (
-                          <SelectItem key={batch.id} value={batch.name}>
+                          <SelectItem key={batch.id} value={batch.id}>
                             {batch.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.batch && (
+                    {errors.batchId && (
                       <p className="text-sm text-red-400">
-                        {errors.batch.message}
+                        {errors.batchId.message}
                       </p>
                     )}
                   </div>
@@ -293,23 +302,23 @@ export default function CreateTestPage() {
                       Question Sets
                     </Label>
                     <Select
-                      onValueChange={(value) => setValue("question", value)}
+                      onValueChange={(value) => setValue("groupId", value)}
                       defaultValue=""
                     >
                       <SelectTrigger className="bg-gray-800 border-gray-700 text-gray-100 h-10 w-full">
                         <SelectValue placeholder="Select Question Set" />
                       </SelectTrigger>
                       <SelectContent className="bg-gray-900 border-gray-800">
-                        {batches.map((batch: BatchData) => (
-                          <SelectItem key={batch.id} value={batch.name}>
-                            {batch.name}
+                        {questions.map((question: BatchData) => (
+                          <SelectItem key={question.id} value={question.id}>
+                            {question.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.question && (
+                    {errors.groupId && (
                       <p className="text-sm text-red-400">
-                        {errors.question.message}
+                        {errors.groupId.message}
                       </p>
                     )}
                   </div>
@@ -320,21 +329,15 @@ export default function CreateTestPage() {
                       Difficulty
                     </Label>
                     <Select
-                      onValueChange={(value) =>
-                        setValue(
-                          "difficulty",
-                          value as "easy" | "medium" | "hard"
-                        )
-                      }
-                      defaultValue="medium"
+                      onValueChange={(value) => setValue("difficulty", value)}
                     >
                       <SelectTrigger className="bg-gray-800 border-gray-700 text-gray-100 h-10 w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-gray-900 border-gray-800">
-                        <SelectItem value="easy">Easy</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="hard">Hard</SelectItem>
+                        <SelectItem value="EASY">Easy</SelectItem>
+                        <SelectItem value="MEDIUM">Medium</SelectItem>
+                        <SelectItem value="HARD">Hard</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
