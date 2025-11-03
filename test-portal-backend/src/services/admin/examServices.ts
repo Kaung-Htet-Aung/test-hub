@@ -15,7 +15,7 @@ export interface CreateTestInput {
 
 const prisma = new PrismaClient();
 
-export const createTest = (data: CreateTestInput) => {
+export const createExamService = (data: CreateTestInput) => {
   return prisma.test.create({
     data: {
       title: data.title,
@@ -33,6 +33,28 @@ export const createTest = (data: CreateTestInput) => {
           batch: {
             connect: { id: data.batchId },
           },
+        },
+      },
+    },
+  });
+};
+
+export const getAllExamService = () => {
+  return prisma.test.findMany();
+};
+
+export const getOneExamService = (examId: string) => {
+  return prisma.test.findUnique({
+    where: { id: examId },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      passingScore: true,
+      timeLimit: true,
+      group: {
+        select: {
+          questions: true,
         },
       },
     },

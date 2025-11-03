@@ -22,37 +22,37 @@ const sidebarItems = [
   {
     title: "Dashboard",
     icon: LayoutDashboard,
-    href: "/",
+    href: "/admin",
   },
   {
     title: "Participants",
     icon: Users,
-    href: "/participants",
+    href: "/admin/participants",
   },
   {
     title: "Tests",
     icon: FileText,
-    href: "/tests",
+    href: "/admin/tests",
   },
   {
     title: "Questions",
     icon: BookOpen,
-    href: "/questions",
+    href: "/admin/questions",
   },
   {
     title: "Messages",
     icon: MessageSquare,
-    href: "/messages",
+    href: "/admin/messages",
   },
   {
     title: "Reports",
     icon: TrendingUp,
-    href: "/reports",
+    href: "/admin/reports",
   },
   {
     title: "Settings",
     icon: Settings,
-    href: "/settings",
+    href: "/admin/settings",
   },
 ];
 
@@ -127,6 +127,7 @@ export function Sidebar() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
+                    scroll={false}
                     onClick={() => setIsMobileSidebarOpen(false)}
                   >
                     <Button

@@ -116,7 +116,7 @@ export default function AddParticipantPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [jobId, setJobId] = useState(null);
   const [status, setStatus] = useState("waiting");
-
+  const [batchId, setBatchId] = useState("");
   const parseCSV = (text: string): ParsedParticipant[] => {
     const lines = text.split("\n").filter((line) => line.trim());
     if (lines.length < 2) return [];
@@ -278,12 +278,17 @@ export default function AddParticipantPage() {
   };
   const handleBulkImport = async () => {
     if (!csvFile) return;
+    if (batchId == "") {
+      alert("hi");
+      return;
+    }
+
     setShowPreview(false);
     setIsAdding(true);
 
     const formData = new FormData();
     formData.append("file", csvFile);
-    formData.append("batchId", "cmgqph1kl0000nlv03tn923ds");
+    formData.append("batchId", batchId);
 
     try {
       const response = await api.post("/admin/upload", formData, {
@@ -298,10 +303,15 @@ export default function AddParticipantPage() {
       evtSource.onmessage = (event) => {
         const msg = JSON.parse(event.data);
 
-        if (msg.done) {
+        if (msg.done && msg.state == "completed") {
           setIsAdding(false);
           evtSource.close();
           toast.success("Upload finished! Your data has been added.");
+        }
+        if (msg.done && msg.state == "failed") {
+          setIsAdding(false);
+          evtSource.close();
+          toast.error("Please retry your upload.");
         }
       };
 
@@ -558,9 +568,9 @@ export default function AddParticipantPage() {
             <Card className="bg-gray-900 border-gray-800">
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Select>
-                    <SelectTrigger className="bg-gray-800 border-gray-700 text-gray-100">
-                      <SelectValue placeholder="Select a group to add" />
+                  <Select onValueChange={(value) => setBatchId(value)}>
+                    <SelectTrigger className="w-[200px] bg-gray-900 border-gray-800 text-gray-100">
+                      <SelectValue placeholder="Select a batch" />
                     </SelectTrigger>
 
                     <SelectContent className="bg-gray-900 border-gray-800">
@@ -819,6 +829,7 @@ export default function AddParticipantPage() {
                         Cancel
                       </Button>
                       <Button
+                        type="submit"
                         onClick={handleBulkImport}
                         disabled={
                           isUploading ||

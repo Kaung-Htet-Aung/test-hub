@@ -3,11 +3,12 @@ import { devtools } from "zustand/middleware";
 
 export interface GeneratedQuestion {
   id: string;
+  title: string;
   question: string;
   type: "multiple-choice" | "short-answer" | "coding";
   difficulty: "easy" | "medium" | "hard";
   options?: string[];
-  correctAnswer: string;
+  correctAnswer: string[];
   explanation: string;
   points: number;
 }
@@ -102,11 +103,12 @@ const initialFormData: QuestionGenerationForm = {
 
 const initialManualQuestion: GeneratedQuestion = {
   id: `manual-${Date.now()}-0`,
+  title: "",
   question: "",
   type: "multiple-choice",
   difficulty: "medium",
   options: ["", "", "", ""],
-  correctAnswer: "",
+  correctAnswer: [],
   explanation: "",
   points: 1,
 };
@@ -217,11 +219,12 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         set((state) => {
           const newQuestion: GeneratedQuestion = {
             id: `manual-${Date.now()}-${state.manualQuestions.length}`,
+            title: "",
             question: "",
             type: "multiple-choice",
             difficulty: "medium",
             options: ["", "", "", ""],
-            correctAnswer: "",
+            correctAnswer: [""],
             explanation: "",
             points: 1,
           };

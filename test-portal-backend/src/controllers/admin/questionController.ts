@@ -2,31 +2,38 @@ import { Request, Response, NextFunction } from "express";
 import { body, validationResult } from "express-validator";
 import { createError } from "../../utils/error";
 import { errorCode } from "../../utils/errorCode";
-import { addQuestions } from "../../services/admin/addQuestions";
-import { getQuestionSets } from "../../services/admin/getQuestionSets";
-interface ManualQuestionData {
-  id: string;
-  question: string;
-  type: "multiple-choice" | "short-answer" | "coding";
-  difficulty: "easy" | "medium" | "hard";
-  points: number;
-  correctAnswer: string;
-  options: string[];
-  explanation?: string;
-}
+import { addQuestionService } from "../../services/admin/questionServices";
+import { getQuestionSetService } from "../../services/admin/questionServices";
+
+import { ManualQuestionData } from "../../types/question-type";
 export const addQuestion = [
-  body().isArray().withMessage("Request body must be an array of questions"),
-  body("*.id").notEmpty().withMessage("id is required"),
-  body("*.question").notEmpty().withMessage("question is required"),
-  body("*.type").isString().notEmpty().withMessage("type is required"),
-  body("*.difficulty")
+  body("title")
+    .notEmpty()
+    .withMessage("Quiz title is required")
+    .isString()
+    .withMessage("Title must be a string"),
+
+  // 2. Validate the 'questions' array itself
+  body("questions")
+    .isArray({ min: 1 })
+    .withMessage("There must be at least one question"),
+
+  body("questions.*.id").notEmpty().withMessage("id is required"),
+  body("questions.*.question").notEmpty().withMessage("question is required"),
+  body("questions.*.type")
+    .isString()
+    .notEmpty()
+    .withMessage("type is required"),
+  body("questions.*.difficulty")
     .isIn(["easy", "medium", "hard"])
     .withMessage("difficulty must be easy, medium, or hard"),
-  body("*.options")
+  body("questions.*.options")
     .isArray({ min: 4, max: 4 })
     .withMessage("options must be an array with exactly 4 items"),
-  body("*.correctAnswer").notEmpty().withMessage("correctAnswer is required"),
-  body("*.points")
+  body("questions.*.correctAnswer")
+    .notEmpty()
+    .withMessage("correctAnswer is required"),
+  body("questions.*.points")
     .isNumeric()
     .withMessage("points must be a number")
     .custom((value) => value > 0)
@@ -39,17 +46,16 @@ export const addQuestion = [
       return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
 
-    const questionswithids = req.body as ManualQuestionData[];
-    const questions = questionswithids.map(({ id, ...rest }) => rest);
-
-    if (!Array.isArray(questions)) {
+    const data = req.body as ManualQuestionData;
+    console.log("request data", data);
+    if (!Array.isArray(data.questions)) {
       return next(
         createError("Request body must be an array", 400, errorCode.invalid)
       );
     }
 
     try {
-      await addQuestions(questions);
+      await addQuestionService(data);
 
       res.status(201).json({
         success: true,
@@ -67,7 +73,7 @@ export const addQuestion = [
 
 export const getAllQuestionSets = async (req: Request, res: Response) => {
   try {
-    const groups = await getQuestionSets();
+    const groups = await getQuestionSetService();
     res.status(200).json(groups);
   } catch (error) {
     console.error("Failed to get groups:", error);

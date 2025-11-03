@@ -1,4 +1,5 @@
 "use client";
+import { SyncProvider } from "@/lib/sync";
 
 import { ReactNode } from "react";
 import { AppProvider } from "@/contexts/app-context";
@@ -11,8 +12,10 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <AppProvider>
       <QueryClientProvider client={queryClient}>
-        {children}
-        <Toaster richColors />
+        <SyncProvider>
+          {children}
+          <Toaster richColors />
+        </SyncProvider>
       </QueryClientProvider>
     </AppProvider>
   );

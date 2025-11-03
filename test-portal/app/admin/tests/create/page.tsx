@@ -107,7 +107,7 @@ export default function CreateTestPage() {
     try {
       // API call to create test
       console.log(data);
-      const response = await api.post("/admin/create-test", data);
+      const response = await api.post("/admin/exams", data);
       const result = await response.data;
       console.log(result);
       if (!response) {

@@ -8,9 +8,14 @@ import {
 import { getAllGroups } from "../../../../controllers/admin/groupController";
 import { generateQuestions } from "../../../../controllers/admin/generateQuestions";
 import { addQuestion } from "../../../../controllers/admin/questionController";
-import { createTests } from "../../../../controllers/admin/testController";
+import {
+  createExam,
+  getAllExams,
+  getOneExam,
+} from "../../../../controllers/admin/examController";
 import { createTestValidator } from "../../../../validators/createTestValidator";
 import { getAllQuestionSets } from "../../../../controllers/admin/questionController";
+
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
@@ -19,12 +24,15 @@ router.get("/participants", getAllParticipants);
 router.get("/batches", getAllGroups);
 router.post("/generate-questions", generateQuestions);
 router.post("/add-questions", addQuestion);
-router.post("/create-test", createTestValidator, createTests);
+router.post("/exams", createTestValidator, createExam);
+router.get("/exams", getAllExams);
+router.get("/exams/:id", getOneExam);
 router.get("/questionsets", getAllQuestionSets);
 
 router.post("/upload", upload.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   const batchId = req.body.batchId;
+
   const job = await csvQueue.add("processCsv", {
     filePath: req.file.path,
     batchId,

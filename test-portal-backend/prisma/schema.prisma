@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  
 }
 
 datasource db {
@@ -139,7 +140,7 @@ model Question {
   type          String
   difficulty    String
   options       String[]    // store array of options
-  correctAnswer String
+  correctAnswer String[]
   explanation   String?
   points        Int
   createdAt     DateTime @default(now())

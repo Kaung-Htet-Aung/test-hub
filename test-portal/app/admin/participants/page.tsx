@@ -133,7 +133,7 @@ export default function ParticipantsPage() {
         <Download className="h-4 w-4 mr-2" />
         Export
       </Button>
-      <Link href="/participants/add">
+      <Link href="/admin/participants/add">
         <Button className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700">
           <UserPlus className="h-4 w-4 mr-2" />
           Add Participant

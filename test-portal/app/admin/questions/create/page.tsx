@@ -67,12 +67,13 @@ interface ManualQuestionData {
   type: "multiple-choice" | "short-answer" | "coding";
   difficulty: "easy" | "medium" | "hard";
   points: number;
-  correctAnswer: string;
+  correctAnswer: string[];
   options?: string[];
   explanation?: string;
 }
 
 interface ManualQuestionsFormFormData {
+  title: string;
   questions: ManualQuestionData[];
 }
 
@@ -163,6 +164,7 @@ export default function GenerateQuestionsPage() {
   const manualForm = useForm<ManualQuestionsFormFormData>({
     defaultValues: {
       questions: manualQuestions,
+      title: "",
     },
   });
 
@@ -254,7 +256,7 @@ export default function GenerateQuestionsPage() {
       type: "multiple-choice" as const,
       difficulty: "medium" as const,
       points: 1,
-      correctAnswer: "",
+      correctAnswer: [],
       options: ["", "", "", ""],
       explanation: "",
     };
@@ -269,18 +271,21 @@ export default function GenerateQuestionsPage() {
 
   const handleManualGenerate = async (data: ManualQuestionsFormFormData) => {
     const validQuestions = data.questions.filter(
-      (q) => q.question.trim() !== "" && q.correctAnswer.trim() !== ""
+      (q) => q.question.trim() !== "" && q.correctAnswer.length !== 0
     );
-
+    //  console.log(validQuestions);
     if (validQuestions.length === 0) {
       toast.error("Please fill in at least one question with a correct answer");
       return;
     }
-    console.log(validQuestions);
-
+    const question = {
+      title: data.title,
+      questions: data.questions,
+    };
+    console.log("question frontend", question);
     try {
       setLoading(true);
-      const response = await api.post("/admin/add-questions", validQuestions);
+      const response = await api.post("/admin/add-questions", question);
       const result = await response.data;
       console.log(result);
       if (!response) {
@@ -291,7 +296,6 @@ export default function GenerateQuestionsPage() {
       );
       // Reset the form and redirect to questions page
       manualForm.reset();
-      router.push("/questions");
     } catch (error) {
       console.error("Error saving questions:", error);
       toast.error(
@@ -575,7 +579,26 @@ export default function GenerateQuestionsPage() {
                         Add Question
                       </Button>
                     </div>
-
+                    <FormField
+                      control={manualForm.control}
+                      name="title" // <--- This is now correct
+                      rules={{ required: "A title for the quiz is required." }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-100 text-lg">
+                            Quiz Title *
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., Biology 101 Final Exam"
+                              {...field}
+                              className="bg-gray-800 border-gray-700 text-gray-100"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <div className="space-y-6">
                       {questionFields.map((field, questionIndex) => (
                         <ManualQuestion
@@ -716,23 +739,47 @@ function ManualQuestion({
   const watchedCorrectAnswer = useWatch({
     control,
     name: `questions.${questionIndex}.correctAnswer`,
+    defaultValue: [],
   });
 
   const handleSetCorrectAnswer = (optionIndex: number) => {
-    const optionValue = watchedOptions?.[optionIndex];
-    if (optionValue && optionValue.trim() !== "") {
-      setValue(`questions.${questionIndex}.correctAnswer`, optionValue.trim(), {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
-      toast.success(`Option ${optionIndex + 1} set as correct answer`);
+    const optionValue = watchedOptions?.[optionIndex]?.trim();
+    if (!optionValue) return;
+
+    const currentAnswers: string[] = watchedCorrectAnswer || [];
+
+    console.log("current ans", currentAnswers);
+    // Toggle the option in/out of the array
+    const updatedAnswers = currentAnswers.includes(optionValue)
+      ? currentAnswers.filter((ans) => ans !== optionValue) // remove if exists
+      : [...currentAnswers, optionValue]; // add if not
+    console.log("updated ans", updatedAnswers);
+    // Set the array back to the form
+    setValue(`questions.${questionIndex}.correctAnswer`, updatedAnswers, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    // Optional toast
+    if (currentAnswers.includes(optionValue)) {
+      toast.info(`Option ${optionIndex + 1} removed from correct answers`);
+    } else {
+      toast.success(`Option ${optionIndex + 1} added as correct answer`);
     }
   };
 
   const isOptionCorrect = (optionIndex: number) => {
-    if (watchedCorrectAnswer !== "") {
-      return watchedCorrectAnswer === watchedOptions?.[optionIndex]?.trim();
+    // 1. Get the string value of the option at the specified index
+    const optionValue = watchedOptions?.[optionIndex]?.trim();
+
+    // If the option itself is empty, it can't be correct
+    if (!optionValue) {
+      return false;
     }
+
+    // 2. Check if that string value exists in the array of correct answers
+    const currentAnswers: string[] = watchedCorrectAnswer || [];
+    return currentAnswers.includes(optionValue);
   };
 
   return (
@@ -971,7 +1018,7 @@ function ManualQuestion({
         )}
 
         {/* Correct Answer - Only show for non-multiple-choice questions */}
-        {watchedType !== "multiple-choice" && (
+        {/*  {watchedType !== "multiple-choice" && (
           <FormField
             control={control}
             name={`questions.${questionIndex}.correctAnswer`}
@@ -999,7 +1046,7 @@ function ManualQuestion({
               </FormItem>
             )}
           />
-        )}
+        )} */}
 
         {/* Explanation */}
         <FormField

@@ -17,6 +17,7 @@ const worker = new Worker(
   "csvQueue",
   async (job) => {
     const { filePath, batchId } = job.data;
+    console.log("batch id is", batchId);
     const rows: CSVRow[] = [];
     await new Promise<void>((resolve, reject) => {
       fs.createReadStream(filePath)
